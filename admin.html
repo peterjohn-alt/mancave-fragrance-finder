@@ -63,6 +63,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
 .logout{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);background:none;border:none;cursor:pointer;text-decoration:underline;}
 .hint{font-size:12px;color:var(--dimmer);margin-top:-8px;margin-bottom:16px;line-height:1.5;}
+.drop-zone{border:2px dashed var(--line-s);border-radius:12px;padding:26px;text-align:center;cursor:pointer;color:var(--dim);transition:all .15s;background:var(--bg2);}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-soft);color:var(--text);}
+.drop-zone img{max-width:100%;max-height:180px;border-radius:8px;display:block;margin:0 auto;}
 </style>
 </head>
 <body>
@@ -112,8 +115,22 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
           <select id="f_special"><option value="false">No</option><option value="true">Yes</option></select>
         </div>
         <div class="field"><label>Inspired by</label><input id="f_inspired" placeholder="e.g. Azzaro The Most Wanted"></div>
-      <div class="field"><label>Image URL <span style="text-transform:none;color:var(--dimmer);">(optional)</span></label><input id="f_image" placeholder="https://... — a photo of the bottle, shown at the end of the quiz"></div>
-      <p class="hint" style="margin-top:-10px;">Host the image anywhere free (drag it into your GitHub repo and use its raw link, or a free host like imgur) and paste the link here. Leave blank and the quiz just won't show a photo for this one.</p>
+      <div class="field">
+        <label>Photo <span style="text-transform:none;color:var(--dimmer);">(optional — shown on the fragrance's result card)</span></label>
+        <div id="dropZone" class="drop-zone">
+          <div id="dropZoneEmpty">
+            <div style="font-size:22px;margin-bottom:6px;">📷</div>
+            <div>Drag a photo here, or click to browse</div>
+            <div class="hint" style="margin:6px 0 0;">Auto-cropped and resized to a standard 1000×625 (16:10) — any photo works, just aim for a clear, well-lit shot of the bottle.</div>
+          </div>
+          <div id="dropZonePreview" style="display:none;">
+            <img id="previewImg" alt="Preview">
+            <button type="button" class="btn" id="removeImgBtn" style="margin-top:10px;">Remove photo</button>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;">
+        <div id="imgMsg"></div>
+      </div>
       </div>
 
       <div class="field"><label>Scent profile tags</label>
@@ -415,13 +432,80 @@ $('addOccTagBtn').addEventListener('click',()=>{
 });
 
 // ---------- Save / Edit / Delete ----------
+// ---------- Photo drag-and-drop (resized + compressed in-browser, stored as data URI — no third-party host needed) ----------
+const IMG_W=1000, IMG_H=625; // standard 16:10, matches the quiz's display shape
+let currentImageData=null;
+
+function showImagePreview(dataUrl){
+  currentImageData=dataUrl;
+  $('previewImg').src=dataUrl;
+  $('dropZoneEmpty').style.display='none';
+  $('dropZonePreview').style.display='block';
+}
+function clearImage(){
+  currentImageData=null;
+  $('previewImg').src='';
+  $('dropZoneEmpty').style.display='block';
+  $('dropZonePreview').style.display='none';
+  $('imgMsg').innerHTML='';
+  $('fileInput').value='';
+}
+
+function processImageFile(file){
+  $('imgMsg').innerHTML='';
+  if(!file || !file.type.startsWith('image/')){
+    $('imgMsg').innerHTML='<div class="msg err">That doesn\'t look like an image file.</div>';
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      // Cover-fit crop to the standard 1000×625 (16:10) shape, so every fragrance's
+      // photo displays identically on the quiz regardless of the source photo's size.
+      const canvas=document.createElement('canvas');
+      canvas.width=IMG_W; canvas.height=IMG_H;
+      const ctx=canvas.getContext('2d');
+      const srcRatio=img.width/img.height, targetRatio=IMG_W/IMG_H;
+      let sx,sy,sw,sh;
+      if(srcRatio>targetRatio){ sh=img.height; sw=sh*targetRatio; sx=(img.width-sw)/2; sy=0; }
+      else{ sw=img.width; sh=sw/targetRatio; sx=0; sy=(img.height-sh)/2; }
+      ctx.drawImage(img,sx,sy,sw,sh,0,0,IMG_W,IMG_H);
+      let quality=0.85;
+      let dataUrl=canvas.toDataURL('image/jpeg',quality);
+      // Firestore documents cap at ~1MB; keep well under that by stepping quality down if needed.
+      while(dataUrl.length>700000 && quality>0.4){
+        quality-=0.1;
+        dataUrl=canvas.toDataURL('image/jpeg',quality);
+      }
+      if(dataUrl.length>900000){
+        $('imgMsg').innerHTML='<div class="msg err">This photo is still too large after compression — try a simpler/smaller source image.</div>';
+        return;
+      }
+      showImagePreview(dataUrl);
+    };
+    img.onerror=()=>{ $('imgMsg').innerHTML='<div class="msg err">Couldn\'t read that image — try a different file.</div>'; };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+const dropZone=$('dropZone');
+dropZone.addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',e=>{ if(e.target.files[0])processImageFile(e.target.files[0]); });
+['dragenter','dragover'].forEach(evt=>dropZone.addEventListener(evt,e=>{ e.preventDefault(); dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(evt=>dropZone.addEventListener(evt,e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); }));
+dropZone.addEventListener('drop',e=>{ if(e.dataTransfer.files[0])processImageFile(e.dataTransfer.files[0]); });
+$('removeImgBtn').addEventListener('click',e=>{ e.stopPropagation(); clearImage(); });
+
 function resetForm(){
   editingId=null;
   $('editId').value='';
   $('formTitle').textContent='Add a fragrance';
   $('cancelEditBtn').style.display='none';
   $('f_name').value=''; $('f_age').value='youthful'; $('f_special').value='false';
-  $('f_inspired').value=''; $('f_image').value=''; $('f_why').value=''; $('f_notes').value='';
+  $('f_inspired').value=''; $('f_why').value=''; $('f_notes').value='';
+  clearImage();
   picked={profile:new Set(),effect:new Set(),occ:new Set(),time:new Set(),weather:new Set(),strength:new Set()};
   renderChipPickers();
 }
@@ -436,7 +520,7 @@ $('saveBtn').addEventListener('click',async()=>{
     age:$('f_age').value,
     special:$('f_special').value==='true',
     inspired:$('f_inspired').value.trim(),
-    imageUrl:$('f_image').value.trim(),
+    imageUrl:currentImageData||'',
     why:$('f_why').value.trim(),
     notes:$('f_notes').value,
     profile:[...picked.profile],
@@ -469,9 +553,9 @@ function editFrag(f){
   $('f_age').value=f.age||'youthful';
   $('f_special').value=f.special?'true':'false';
   $('f_inspired').value=f.inspired||'';
-  $('f_image').value=f.imageUrl||'';
   $('f_why').value=f.why||'';
   $('f_notes').value=f.notes||'';
+  if(f.imageUrl){ showImagePreview(f.imageUrl); } else { clearImage(); }
   picked={
     profile:new Set(f.profile||[]),
     effect:new Set(f.effect||[]),
