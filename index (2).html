@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Your Scent — Mancave Man Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0a08;
+  --bg2:#151210;
+  --text:#f3ede2;
+  --dim:rgba(243,237,226,.58);
+  --dimmer:rgba(243,237,226,.32);
+  --line:rgba(243,237,226,.10);
+  --line-s:rgba(243,237,226,.20);
+  --accent:#3d6489;
+  --accent2:#7fa4c4;
+  --accent-soft:rgba(61,100,137,.14);
+  --accent-line:rgba(61,100,137,.42);
+  --ink:#0b0a08;
+  --paper:#f3ede2;
+}
+body.light{
+  --bg:#f3ede2;
+  --bg2:#ffffff;
+  --text:#1a1712;
+  --dim:rgba(26,23,18,.62);
+  --dimmer:rgba(26,23,18,.36);
+  --line:rgba(26,23,18,.10);
+  --line-s:rgba(26,23,18,.18);
+  --accent:#3d6489;
+  --accent2:#2f5170;
+  --accent-soft:rgba(61,100,137,.10);
+  --accent-line:rgba(61,100,137,.35);
+  --ink:#f3ede2;
+  --paper:#1a1712;
+}
+body{transition:background .25s ease, color .25s ease;}
+.theme-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--line-s);background:transparent;color:var(--text);
+  cursor:pointer;font-size:15px;transition:all .18s;flex-shrink:0;
+}
+.theme-toggle:hover{border-color:var(--accent-line);}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.w{max-width:760px;margin:0 auto;padding:0 24px;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--line);}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-logo{height:26px;width:auto;display:block;}
+.brand-sub{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);}
+
+.hero{padding:72px 0 40px;position:relative;overflow:hidden;}
+.hero-glow{position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:640px;height:360px;background:radial-gradient(ellipse at center, rgba(192,138,78,.14) 0%, transparent 70%);pointer-events:none;}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--accent);margin-bottom:22px;position:relative;}
+.eyebrow::after{content:"";width:28px;height:1px;background:var(--accent);display:inline-block;}
+.hero h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(38px,7vw,58px);line-height:1.05;position:relative;}
+.hero h1 em{font-style:italic;font-weight:400;color:var(--accent2);}
+.hero-sub{margin-top:20px;max-width:600px;font-size:16px;line-height:1.75;color:var(--dim);font-weight:300;position:relative;}
+.hero-sub strong{color:var(--text);font-weight:600;}
+.hero-sub strong em{color:var(--accent2);font-style:italic;}
+.start-btn{margin-top:32px;display:inline-flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;padding:15px 30px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:var(--paper);color:var(--ink);transition:all .2s;position:relative;}
+.start-btn:hover{background:var(--accent);color:var(--ink);}
+
+.quiz{display:none;padding:56px 0 80px;}
+.quiz.active{display:block;}
+.progress-row{display:flex;align-items:center;gap:16px;margin-bottom:28px;}
+.progress-step{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--accent);white-space:nowrap;}
+.progress-track{flex:1;height:2px;background:var(--line);position:relative;border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width .4s ease;}
+
+/* Quiz panel: dark, matches the site's own palette instead of a white card dropped on top */
+.quiz-panel{
+  --bg2:rgba(255,255,255,.04);
+  --text:#f5efe3;
+  --dim:rgba(245,239,227,.64);
+  --dimmer:rgba(245,239,227,.36);
+  --line:rgba(255,255,255,.08);
+  --line-s:rgba(255,255,255,.14);
+  --accent:#5a86ab;
+  --accent2:#8fb3d1;
+  --accent-soft:rgba(90,134,171,.16);
+  --accent-line:rgba(90,134,171,.45);
+  background:
+    radial-gradient(ellipse 520px 300px at 50% -80px, rgba(90,134,171,.10), transparent 70%),
+    linear-gradient(160deg, #18140f 0%, #100d0a 100%);
+  border-radius:20px;
+  padding:36px 32px;
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 30px 60px rgba(0,0,0,.5), 0 0 50px rgba(90,134,171,.05);
+}
+
+.q-signature{font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:clamp(26px,5vw,38px);color:var(--accent2);margin-bottom:10px;line-height:1;}
+.q-title{font-family:'Playfair Display',serif;font-weight:700;font-size:21px;margin-bottom:8px;color:var(--text);}
+.q-help{font-size:14px;color:var(--dim);line-height:1.6;margin-bottom:26px;max-width:520px;}
+
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.opt-grid.two-col{grid-template-columns:repeat(3,1fr);}
+.opt-grid.stack{grid-template-columns:1fr;}
+.opt-grid.stack .opt{display:flex;align-items:center;gap:12px;padding:14px 18px;}
+.opt-grid.stack .opt-emoji{margin-bottom:0;font-size:18px;}
+.opt-grid.stack .opt-label{flex-shrink:0;}
+.opt-grid.stack .opt-desc{margin-top:0;margin-left:auto;text-align:right;}
+.opt-grid.cards{grid-template-columns:1fr;}
+.opt-grid.cards .opt{display:block;text-align:left;padding:20px 22px;}
+.opt-grid.cards .opt-emoji{display:inline-block;font-size:20px;margin-bottom:0;margin-right:10px;vertical-align:middle;}
+.opt-grid.cards .opt-label{font-size:16px;font-weight:700;display:inline-block;vertical-align:middle;}
+.opt-grid.cards .opt-desc{text-align:left;margin:8px 0 0;line-height:1.55;max-width:100%;}
+.opt-grid.chips{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));}
+.opt{background:var(--bg2);border:1.5px solid var(--line-s);border-radius:10px;padding:16px;cursor:pointer;transition:all .18s;text-align:left;}
+.opt:hover{border-color:var(--accent-line);background:rgba(255,255,255,.06);}
+.opt.on{background:var(--accent-soft);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-line) inset;}
+.opt-emoji{font-size:19px;margin-bottom:8px;display:block;}
+.opt-label{font-size:14px;font-weight:600;color:var(--text);}
+.opt-desc{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.5;}
+
+.limit-note{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dimmer);margin-top:16px;}
+
+textarea.freetext{width:100%;font-family:'Inter',sans-serif;font-size:15px;padding:16px;border:1.5px solid var(--line-s);border-radius:10px;background:var(--bg2);color:var(--text);resize:vertical;min-height:110px;line-height:1.55;}
+textarea.freetext::placeholder{color:var(--dimmer);font-style:italic;}
+textarea.freetext:focus{outline:none;border-color:var(--accent);}
+.ai-btn{margin-top:12px;font-family:'Space Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;padding:10px 18px;border-radius:8px;border:1.5px solid var(--line-s);background:transparent;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
+.ai-btn:hover{background:var(--text);color:var(--bg2);border-color:var(--text);}
+.ai-btn.loading{opacity:.6;pointer-events:none;}
+.ai-banner{margin-top:14px;padding:12px 16px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;font-size:13px;font-style:italic;color:var(--accent2);line-height:1.55;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:12px;height:12px;border:2px solid rgba(120,90,50,.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:14px;}
+.btn{font-family:'Space Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;padding:14px 26px;border-radius:10px;cursor:pointer;font-weight:700;transition:all .18s;border:1.5px solid var(--line-s);background:transparent;color:var(--text);}
+.btn:hover{border-color:var(--text);}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+.btn:disabled{opacity:.35;pointer-events:none;}
+.btn-ghost{background:none;border:none;color:var(--dim);font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;}
+.btn-ghost:hover{color:var(--text);}
+
+.results{display:none;padding:60px 0 80px;}
+.results.active{display:block;}
+.res-signature{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(32px,6vw,48px);color:var(--accent2);margin-bottom:6px;}
+.res-sub{font-size:15px;color:var(--dim);max-width:520px;line-height:1.6;margin-bottom:40px;}
+
+.match-card{background:var(--bg2);border:1px solid var(--line);border-radius:16px;margin-bottom:22px;overflow:hidden;}
+.match-grid{display:flex;flex-direction:column;gap:20px;margin-bottom:8px;}
+.match-grid .match-card{margin-bottom:0;}
+.slot-block{display:flex;flex-direction:column;gap:10px;}
+.slot-block .change-slot{align-self:center;border:1px solid var(--line-s);border-radius:8px;padding:8px 14px;}
+.slot-block .change-slot:hover{border-color:var(--accent-line);color:var(--accent2);}
+.match-head{padding:24px 26px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.match-rank{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);margin-bottom:8px;}
+.match-name{font-family:'Playfair Display',serif;font-weight:700;font-size:21px;line-height:1.25;}
+.match-badge{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:6px 12px;border-radius:99px;border:1px solid var(--accent-line);color:var(--accent2);height:fit-content;}
+.match-body{padding:20px 26px;}
+.match-why{font-size:14.5px;line-height:1.7;color:var(--text);margin-bottom:18px;}
+.match-row{display:flex;gap:10px;margin-bottom:12px;font-size:13.5px;line-height:1.6;}
+.match-row .lab{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);flex-shrink:0;padding-top:2px;min-width:112px;}
+.match-row .val{color:var(--dim);}
+.notes-toggle{margin-top:14px;font-family:'Space Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--dimmer);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.notes-toggle:hover{color:var(--accent2);}
+.notes-body{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:13px;color:var(--dim);line-height:1.7;white-space:pre-line;}
+.notes-body.open{display:block;}
+
+.try-note{margin-top:36px;padding:22px 24px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:12px;}
+.try-note h3{font-family:'Playfair Display',serif;font-weight:700;font-size:18px;margin-bottom:8px;color:var(--text);}
+.try-note p{font-size:14px;line-height:1.65;color:var(--dim);}
+
+.restart-row{margin-top:32px;text-align:center;}
+footer{text-align:center;padding:26px;border-top:1px solid var(--line);color:var(--dimmer);font-size:12px;font-family:'Space Mono',monospace;letter-spacing:.05em;}
+
+@media(max-width:600px){
+  .opt-grid.two-col{grid-template-columns:1fr;}
+  .match-head{flex-direction:column;}
+  .quiz-panel{padding:26px 20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar w" style="max-width:760px;">
+  <div class="brand">
+    <img class="brand-logo" src="data:image/png;base64,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" alt="Mancave Man Market">
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="brand-sub">Fragrance Finder</div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle light / dark mode" aria-label="Toggle light / dark mode">🌙</button>
+  </div>
+</div>
+
+<header class="hero" id="heroSection">
+  <div class="hero-glow"></div>
+  <div class="w">
+    <div class="eyebrow">Find your scent</div>
+    <h1>YOUR SIGNATURE SCENT<br><em>STARTS HERE.</em></h1>
+    <p class="hero-sub">Finding the right fragrance can be difficult, but here at <strong>MANCAVE</strong>, we take that burden off you. We take the guesswork out of choosing your scent by being intentional about matching <strong><em>OUR</em></strong> fragrances to <strong><em>YOUR</em></strong> lifestyle, occasions, weather and the impression you want to make. Whether you need a <strong>Day-time</strong> scent for the office or business, a <strong>Night-time</strong> scent for dates and enjoyable nights out, or that one <strong>Special Occasion</strong> fragrance designed to make an impression, we'll help you find the right fit. All you have to do is answer the following questions and let our fragrance consultant algorithm find the perfect scents, carefully catered to your needs.</p>
+    <button class="start-btn" id="startBtn">Start the test →</button>
+  </div>
+</header>
+
+<section class="quiz w" id="quizSection">
+  <div class="progress-row">
+    <span class="progress-step" id="progressStep">STEP 01 / 06</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <div class="quiz-panel" id="stepArea"></div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">← Back</button>
+    <button class="btn primary" id="nextBtn">Next →</button>
+  </div>
+</section>
+
+<section class="results w" id="resultsSection">
+  <div class="res-signature">Yours.</div>
+  <p class="res-sub" id="resultsSub">These are the fragrances that best fit what you told us — but fragrance is personal. Try the samples, see how they develop on your skin, and decide which one feels most like you.</p>
+  <div id="matchList"></div>
+  <div class="try-note">
+    <h3>Try your matches</h3>
+    <p>Fragrance behaves differently on every skin. Sample each one in-store, wear it for a few hours, and trust how it develops — not just the first spray.</p>
+  </div>
+  <div class="restart-row">
+    <button class="btn" id="restartBtn">Take the test again</button>
+  </div>
+</section>
+
+<footer>Mancave Man Market — find your scent, wear your character.</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAOuVpsJlJuWJyfpOB_NB1Vo0ZDvb7mP44",
+  authDomain: "fragrancequiz.firebaseapp.com",
+  projectId: "fragrancequiz",
+  storageBucket: "fragrancequiz.firebasestorage.app",
+  messagingSenderId: "761367959815",
+  appId: "1:761367959815:web:01e0b8611335501f488da2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+// ---------- Light / dark mode ----------
+const themeToggle=document.getElementById('themeToggle');
+function applyTheme(mode){
+  document.body.classList.toggle('light',mode==='light');
+  themeToggle.textContent = mode==='light' ? '☀️' : '🌙';
+}
+applyTheme(localStorage.getItem('mancave-theme') || 'dark');
+themeToggle.addEventListener('click',()=>{
+  const next = document.body.classList.contains('light') ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('mancave-theme',next);
+});
+
+// CATALOG is loaded live from Firestore (the "fragrances" collection) instead of
+// being hardcoded here. Peter manages it from admin.html — this page never needs editing again.
+let CATALOG = [];
+
+// Known tag metadata (emoji/label/description) for a nice-looking quiz option.
+// Any tag that shows up in Firestore but isn't listed here still works — it just
+// gets a plain fallback emoji/label, generated automatically below.
+const PROFILE_META={
+  woody:{e:"🌲",l:"Woody",d:"Smooth, earthy, masculine"},
+  citrus:{e:"🍋",l:"Citrusy",d:"Bright, fresh, zesty"},
+  aquatic:{e:"🌊",l:"Aquatic",d:"Clean, watery, refreshing"},
+  spicy:{e:"🌶️",l:"Spicy",d:"Warm, aromatic, energetic"},
+  aromatic:{e:"🌿",l:"Aromatic",d:"Fresh, herbal, clean"},
+  fruity:{e:"🍍",l:"Fruity",d:"Juicy, vibrant, playful"},
+  vanilla:{e:"🍦",l:"Vanilla",d:"Creamy, warm, smooth"},
+  amber:{e:"🪵",l:"Amber",d:"Warm, rich, slightly sweet"},
+  floral:{e:"🌸",l:"Floral",d:"Soft, blooming, elegant"},
+  green:{e:"🍃",l:"Green",d:"Crisp, leafy, natural"},
+  musky:{e:"🦌",l:"Musky",d:"Skin-close, sensual, warm"},
+  smoky:{e:"🔥",l:"Smoky",d:"Dark, resinous, intense"}
+};
+const EFFECT_META={
+  youthful:{e:"⚡",l:"Youthful",d:"Fresh, energetic, playful"},
+  powerful:{e:"💪",l:"Powerful",d:"Bold, confident, commanding"},
+  seductive:{e:"😏",l:"Seductive",d:"Warm, smooth, attention-grabbing"},
+  elegant:{e:"✨",l:"Elegant",d:"Polished, refined, sophisticated"},
+  masculine:{e:"🕴️",l:"Masculine",d:"Confident, mature, traditionally masculine"}
+};
+function titleCase(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function tagOpt(tag,meta){
+  const m=meta[tag];
+  return {v:tag,e:m?m.e:"🏷️",l:m?m.l:titleCase(tag),d:m?m.d:""};
+}
+function buildDynamicTagOptions(){
+  const profileTags=new Set(Object.keys(PROFILE_META));
+  const effectTags=new Set(Object.keys(EFFECT_META));
+  CATALOG.forEach(f=>{
+    (f.profile||[]).forEach(t=>profileTags.add(t));
+    (f.effect||[]).forEach(t=>effectTags.add(t));
+  });
+  const profileOpts=[...profileTags].map(t=>tagOpt(t,PROFILE_META));
+  const effectOpts=[...effectTags].map(t=>tagOpt(t,EFFECT_META));
+  const profileStep=STEPS.find(s=>s.key==='profile');
+  const effectStep=STEPS.find(s=>s.key==='effect');
+  profileStep.opts=profileOpts;
+  effectStep.opts=effectOpts;
+}
+
+async function loadCatalog(){
+  const startBtn=document.getElementById('startBtn');
+  startBtn.textContent='Loading fragrances…';
+  startBtn.disabled=true;
+  try{
+    const snap=await getDocs(collection(db,'fragrances'));
+    CATALOG=snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){
+    console.error('Failed to load fragrance catalog',e);
+  }
+  buildDynamicTagOptions();
+  startBtn.textContent='Start the test →';
+  startBtn.disabled=false;
+}
+
+async function logResult(names,bundle){
+  try{
+    await addDoc(collection(db,'results'),{names,bundle,ts:serverTimestamp()});
+  }catch(e){
+    console.error('Could not log result (non-fatal)',e);
+  }
+}
+
+const OCC_LABELS={office:"Office / work",school:"School / university",casual:"Casual days / cafés",gym:"Running / gym / sports",outdoor:"Outdoor walks / parks",errands:"Errand runs",dinners:"Dinners",date:"Date nights",clubs:"Clubs / bars",weddings:"Weddings / parties",formal:"Formal dinners / galas"};
+const STRENGTH_LABELS={subtle:"🤏 Subtle",moderate:"👀 Moderate",strong:"🔥 Strong"};
+const WEATHER_LABELS={hot:"hot weather",mild:"warm weather",cold:"cool weather"};
+const TIME_LABELS={day:"daytime",evening:"evening",night:"night"};
+
+const STEPS=[
+  {key:"bundle",sig:"Your bundle.",title:"Which bundle is right for you?",help:"This decides how many fragrances we'll match you with, and what each one is built to cover.",type:"single",cols:"cards",opts:[
+    {v:"single",e:"1️⃣",l:"The Single Bundle",d:"One fragrance, expertly matched to your day, your night, or a special occasion."},
+    {v:"duo",e:"2️⃣",l:"The Dynamic Duo Bundle",d:"Two fragrances — one built for daytime and hot weather, one for nighttime and cooler air."},
+    {v:"trio",e:"3️⃣",l:"The Mancave Trio",d:"Three fragrances covering your day, your night, and that one special occasion."}
+  ]},
+  {key:"age",sig:"Your era.",title:"Age Range",help:"This is only a light factor in the final recommendation — the fragrance's character, the occasion and your preferences carry more weight.",type:"single",cols:"stack",opts:[
+    {v:"1825",e:"",l:"18–25 (Youthful)"},{v:"2535",e:"",l:"25–35 (Versatile/Mid-range)"},{v:"35plus",e:"",l:"35+ (Mature)"}
+  ]},
+  {key:"occ",sig:"Your world.",title:"Where / When to Wear",help:"Choose where you see yourself wearing the fragrance. Select as many as apply.",type:"multi",cols:"",opts:[
+    {v:"office",e:"🏢",l:"Office / work"},{v:"school",e:"🎓",l:"School / university"},{v:"casual",e:"☕",l:"Casual days / cafés"},{v:"gym",e:"🏃",l:"Running / gym / sports"},{v:"outdoor",e:"🌳",l:"Outdoor walks / parks"},{v:"errands",e:"🛒",l:"Errand runs"},{v:"dinners",e:"🍽️",l:"Dinners"},{v:"date",e:"❤️",l:"Date nights"},{v:"clubs",e:"🍸",l:"Clubs / bars"},{v:"weddings",e:"💍",l:"Weddings / parties"},{v:"formal",e:"🕴️",l:"Formal dinners / galas"}
+  ]},
+  {key:"time",sig:"Your hour.",title:"Time of Day",help:"",type:"single",cols:"stack",showIf:(st)=>st.bundle==='single',opts:[
+    {v:"day",e:"⛅",l:"Daytime",d:"Fresh, clean and easy-going"},{v:"evening",e:"🌆",l:"Evening",d:"Smoother, warmer, more noticeable"},{v:"night",e:"🌙",l:"Night",d:"Richer, sweeter, spicier, stronger"},{v:"all",e:"🔄",l:"All day",d:"Versatile across situations"}
+  ]},
+  {key:"strength",sig:"Your presence.",title:"Strength Factor / Sillage",help:"How far do you want it to travel?",type:"single",cols:"stack",opts:[
+    {v:"subtle",e:"🤏",l:"Subtle",d:"Close to the skin, only noticed up close"},{v:"moderate",e:"👀",l:"Moderate",d:"Noticeable in the room without overpowering"},{v:"strong",e:"🔥",l:"Strong",d:"Fills the room, lingers long after you leave"}
+  ]},
+  {key:"profile",sig:"Your character.",title:"Scent Profile",help:"Pick up to 3 that sound most appealing.",type:"multi",max:3,cols:"chips",opts:[]},
+  {key:"effect",sig:"Your message.",title:"Effect",help:"Choose what you want your fragrance to communicate. Pick 1–2.",type:"multi",max:2,cols:"chips",opts:[]},
+  {key:"freetext",sig:"Your words.",title:"Personal Description",help:"Optional — tell us in your own words.",type:"text",cols:"",opts:[]}
+];
+
+let current=0;
+let loggedThisSession=false;
+const state={bundle:null,age:null,occ:[],time:null,strength:null,profile:[],effect:[],freetext:"",aiTags:{profile:[],effect:[]}};
+
+const heroSection=document.getElementById('heroSection');
+const quizSection=document.getElementById('quizSection');
+const resultsSection=document.getElementById('resultsSection');
+const stepArea=document.getElementById('stepArea');
+const progressStep=document.getElementById('progressStep');
+const progressFill=document.getElementById('progressFill');
+const backBtn=document.getElementById('backBtn');
+const nextBtn=document.getElementById('nextBtn');
+
+document.getElementById('startBtn').addEventListener('click',()=>{
+  heroSection.style.display='none';
+  quizSection.classList.add('active');
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+loadCatalog();
+
+function isVisible(step){ return !step.showIf || step.showIf(state); }
+function visibleSteps(){ return STEPS.filter(isVisible); }
+function nextVisibleIndex(from){ let i=from+1; while(i<STEPS.length && !isVisible(STEPS[i])) i++; return i; }
+function prevVisibleIndex(from){ let i=from-1; while(i>=0 && !isVisible(STEPS[i])) i--; return i; }
+
+function renderStep(){
+  const s=STEPS[current];
+  const vis=visibleSteps();
+  const posInVis=vis.indexOf(s)+1;
+  progressStep.textContent=`STEP ${String(posInVis).padStart(2,'0')} / ${vis.length}`;
+  progressFill.style.width=vis.length>1?((posInVis-1)/(vis.length-1))*100+'%':'0%';
+  backBtn.style.visibility=current===0?'hidden':'visible';
+
+  let html=`<div class="q-signature">${s.sig}</div><div class="q-title">${s.title}</div>`;
+  if(s.help)html+=`<div class="q-help">${s.help}</div>`;
+
+  if(s.type==='single'){
+    html+=`<div class="opt-grid ${s.cols}">`;
+    s.opts.forEach(o=>{
+      const on=state[s.key]===o.v?' on':'';
+      html+=`<button class="opt${on}" data-v="${o.v}">${o.e?`<span class="opt-emoji">${o.e}</span>`:''}<span class="opt-label">${o.l}</span>${o.d?`<div class="opt-desc">${o.d}</div>`:''}</button>`;
+    });
+    html+='</div>';
+  }else if(s.type==='multi'){
+    html+=`<div class="opt-grid ${s.cols}">`;
+    s.opts.forEach(o=>{
+      const on=state[s.key].includes(o.v)?' on':'';
+      html+=`<button class="opt${on}" data-v="${o.v}"><span class="opt-emoji">${o.e}</span><span class="opt-label">${o.l}</span>${o.d?`<div class="opt-desc">${o.d}</div>`:''}</button>`;
+    });
+    html+='</div>';
+    if(s.max)html+=`<div class="limit-note">Up to ${s.max} — selected ${state[s.key].length}/${s.max}</div>`;
+  }else if(s.type==='text'){
+    html+=`<textarea class="freetext" id="freetextInput" placeholder="e.g. &quot;I'm looking for a strong, fresh fragrance that will turn heads as I walk past&quot;...">${state.freetext}</textarea>`;
+    html+=`<button class="ai-btn" id="interpretBtn"><span id="interpretIco">✦</span><span id="interpretText">Read my vibe</span></button>`;
+    html+=`<div class="ai-banner" id="aiBanner"></div>`;
+  }
+
+  stepArea.innerHTML=html;
+  bindStepEvents(s);
+  updateNextState();
+}
+
+function bindStepEvents(s){
+  if(s.type==='single'){
+    stepArea.querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state[s.key]=btn.dataset.v;
+        stepArea.querySelectorAll('.opt').forEach(b=>b.classList.remove('on'));
+        btn.classList.add('on');
+        updateNextState();
+      });
+    });
+  }else if(s.type==='multi'){
+    stepArea.querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const v=btn.dataset.v;
+        const arr=state[s.key];
+        const idx=arr.indexOf(v);
+        if(idx>-1){arr.splice(idx,1);btn.classList.remove('on');}
+        else{
+          if(s.max&&arr.length>=s.max)return;
+          arr.push(v);btn.classList.add('on');
+        }
+        const note=stepArea.querySelector('.limit-note');
+        if(note&&s.max)note.textContent=`Up to ${s.max} — selected ${arr.length}/${s.max}`;
+        updateNextState();
+      });
+    });
+  }else if(s.type==='text'){
+    const ta=document.getElementById('freetextInput');
+    ta.addEventListener('input',()=>{state.freetext=ta.value;});
+    document.getElementById('interpretBtn').addEventListener('click',interpretVibe);
+  }
+}
+
+function updateNextState(){
+  const step=STEPS[current];
+  const ni=nextVisibleIndex(current);
+  const isLast=ni>=STEPS.length;
+  if(isLast){
+    nextBtn.textContent = state.bundle==='duo' ? 'Build my duo →' : state.bundle==='trio' ? 'Build my trio →' : 'Find my scent →';
+  }else{
+    nextBtn.textContent='Next →';
+  }
+  nextBtn.disabled = (step.key==='bundle' && !state.bundle);
+}
+
+backBtn.addEventListener('click',()=>{
+  const pi=prevVisibleIndex(current);
+  if(pi>=0){current=pi;renderStep();}
+});
+nextBtn.addEventListener('click',()=>{
+  const ni=nextVisibleIndex(current);
+  if(ni<STEPS.length){current=ni;renderStep();window.scrollTo({top:0,behavior:'smooth'});}
+  else{buildResults();}
+});
+
+async function interpretVibe(){
+  const text=document.getElementById('freetextInput').value.trim();
+  if(!text){alert('Type something first!');return;}
+  const btn=document.getElementById('interpretBtn');
+  btn.classList.add('loading');
+  document.getElementById('interpretIco').innerHTML='<span class="spinner"></span>';
+  document.getElementById('interpretText').textContent='Reading your vibe...';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:500,
+        system:`You are a fragrance expert. Parse a description into structured attributes. Return ONLY valid JSON, no markdown.
+Schema: {"profile":[],"effect":[],"summary":""}
+profile: subset of [woody,citrus,aquatic,spicy,aromatic,fruity,vanilla,amber] max 3
+effect: subset of [youthful,powerful,seductive,elegant,masculine] max 2
+summary: one punchy sentence <=12 words`,
+        messages:[{role:'user',content:text}]
+      })
+    });
+    const data=await res.json();
+    const raw=data.content.map(b=>b.text||'').join('').trim().replace(/```json|```/g,'');
+    const p=JSON.parse(raw);
+    state.aiTags.profile=p.profile||[];
+    state.aiTags.effect=p.effect||[];
+    const banner=document.getElementById('aiBanner');
+    banner.textContent=p.summary?`“${p.summary}”`:'Got it — blended into your matches.';
+    banner.style.display='block';
+  }catch(e){
+    const banner=document.getElementById('aiBanner');
+    banner.textContent="Couldn't read that — no problem, your other answers still count.";
+    banner.style.display='block';
+  }
+  btn.classList.remove('loading');
+  document.getElementById('interpretIco').textContent='✓';
+  document.getElementById('interpretText').textContent='Vibe captured';
+}
+
+function ageMatch(f){
+  const map={'1825':'youthful','2535':'mid','35plus':'mature'};
+  const sel=map[state.age];
+  if(f.age===sel)return 2;
+  if(f.age==='mid')return 1;
+  return 0;
+}
+
+// Core preference score: age, occasions, strength/sillage, scent profile, effect.
+// Shared by every bundle type — the day/night/special context adds on top of this.
+function corePreferenceScore(f){
+  let s=0;
+  s+=ageMatch(f);
+  state.occ.forEach(o=>{if(f.occ.includes(o))s+=3;});
+  if(state.strength&&f.strength.includes(state.strength))s+=4;
+  const allProfile=[...new Set([...state.profile,...state.aiTags.profile])];
+  allProfile.forEach(p=>{if(f.profile.includes(p))s+=4;});
+  const allEffect=[...new Set([...state.effect,...state.aiTags.effect])];
+  allEffect.forEach(e=>{if(f.effect.includes(e))s+=4;});
+  return s;
+}
+
+// Single-bundle score also folds in the explicit Time of Day answer.
+function score(f){
+  let s=corePreferenceScore(f);
+  if(state.time&&state.time!=='all'){
+    if(f.time.includes(state.time))s+=3;
+    else if(f.time.includes('all'))s+=1;
+  }
+  return s;
+}
+
+// Contextual score for Duo/Trio slots: ctx = {time, weather, special}
+function contextScore(f,ctx){
+  // Hard filters — a scent must actually be classified for this slot, no exceptions.
+  if(ctx.special){
+    if(!f.special) return -999; // only fragrances tagged as special-occasion qualify
+  }else if(ctx.time==='day'){
+    // Day/hot-weather slot: must be tagged for daytime AND hot weather. Never a night/cold-weather scent.
+    if(!(f.time.includes('day') && f.weather.includes('hot'))) return -999;
+  }else if(ctx.time==='night'){
+    // Night/cold-weather slot: must be tagged for night or evening AND cold weather. Never a day/hot-weather scent.
+    if(!((f.time.includes('night')||f.time.includes('evening')) && f.weather.includes('cold'))) return -999;
+  }
+  let s=corePreferenceScore(f);
+  if(ctx.time==='day')s+=3; // exact day+hot match already guaranteed by the filter above; this keeps ranking meaningful
+  if(ctx.time==='night'){
+    if(f.time.includes('night'))s+=3; // prefer explicit "night" tag over "evening" when both qualify
+    else s+=1;
+  }
+  if(ctx.special)s+=2;
+  return s;
+}
+
+function rankForContext(ctx){
+  return CATALOG.map(f=>({f,s:contextScore(f,ctx)})).sort((a,b)=>b.s-a.s).filter(r=>r.s>-900);
+}
+
+// Pick the nth-best (skip) item from a ranked list, excluding names already used by other slots.
+function pickFromRanked(ranked,excludeNames,skip){
+  const filtered=ranked.filter(r=>!excludeNames.includes(r.f.name));
+  if(!filtered.length)return null;
+  const idx=skip%filtered.length;
+  return filtered[idx].f;
+}
+
+const OCC_TIME_WEATHER_LINE=(f)=>{
+  const occText=f.occ.map(o=>OCC_LABELS[o]).join(', ');
+  const timeText=f.time.map(t=>TIME_LABELS[t]).join(', ');
+  const weatherText=f.weather.map(w=>WEATHER_LABELS[w]).join(', ');
+  return `${occText} — best in the ${timeText}, suited to ${weatherText}`;
+};
+
+function cardHTML(f,rankLabel,uid){
+  return `
+    <div class="match-card">
+      <div class="match-head">
+        <div>
+          <div class="match-rank">${rankLabel}</div>
+          <div class="match-name">${f.name}</div>
+        </div>
+        <div class="match-badge">${f.strength.map(s=>STRENGTH_LABELS[s]).join(' · ')}</div>
+      </div>
+      <div class="match-body">
+        <div class="match-why">${f.why}</div>
+        <div class="match-row"><span class="lab">Perfect for</span><span class="val">${OCC_TIME_WEATHER_LINE(f)}</span></div>
+        <div class="match-row"><span class="lab">Smells like</span><span class="val">${f.inspired}</span></div>
+        <div class="notes-toggle" data-i="${uid}">View notes breakdown ↓</div>
+        <div class="notes-body" id="notes-${uid}">${f.notes}</div>
+      </div>
+    </div>`;
+}
+
+function bindCardToggles(container){
+  container.querySelectorAll('.notes-toggle').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.getElementById('notes-'+t.dataset.i).classList.toggle('open');
+    });
+  });
+}
+
+function buildResults(){
+  quizSection.classList.remove('active');
+  resultsSection.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  const resSig=document.querySelector('.res-signature');
+  const resSub=document.getElementById('resultsSub');
+  if(state.bundle==='duo'){
+    resSig.textContent='Your Duo.';
+    resSub.textContent="Your daytime pick and your nighttime pick — two fragrances built for two different sides of you. Not feeling one of them? Swap just that piece.";
+    duoState={daySkip:0,nightSkip:0};
+    renderDuoResults();
+  }else if(state.bundle==='trio'){
+    resSig.textContent='Your Trio.';
+    resSub.textContent="Day, night, and that one special occasion — one recommended combination to start. Not feeling one of them? Swap just that piece.";
+    trioState={daySkip:0,nightSkip:0,specialSkip:0};
+    renderTrioResults();
+  }else{
+    resSig.textContent='Yours.';
+    resSub.textContent="These are the fragrances that best fit what you told us — but fragrance is personal. Try the samples, see how they develop on your skin, and decide which one feels most like you.";
+    renderSingleResults();
+  }
+}
+
+function renderSingleResults(){
+  const ranked=CATALOG.map(f=>({f,s:score(f)})).sort((a,b)=>b.s-a.s);
+  const top=ranked.slice(0,3).filter(r=>r.s>0);
+  const list=document.getElementById('matchList');
+  if(!top.length){
+    list.innerHTML='<div style="padding:40px 0;color:var(--dim);font-style:italic;">Nothing scored a strong match — try running the test again with different picks.</div>';
+    return;
+  }
+  const ranks=['Best match','Strong match','Also worth trying'];
+  let html='<div class="match-grid">';
+  top.forEach((r,i)=>{ html+=cardHTML(r.f,ranks[i],i); });
+  html+='</div>';
+  list.innerHTML=html;
+  bindCardToggles(list);
+  if(!loggedThisSession){ logResult(top.map(r=>r.f.name),'single'); loggedThisSession=true; }
+}
+
+let duoState={daySkip:0,nightSkip:0};
+
+function renderDuoResults(){
+  const dayRanked=rankForContext({time:'day',weather:'hot'});
+  const nightRanked=rankForContext({time:'night',weather:'cold'});
+
+  const day=pickFromRanked(dayRanked,[],duoState.daySkip);
+  const night=pickFromRanked(nightRanked,day?[day.name]:[],duoState.nightSkip);
+
+  const list=document.getElementById('matchList');
+  let html='<div class="match-grid">';
+  const slots=[
+    {f:day,label:'☀️ Daytime / Hot Weather Pick',key:'day'},
+    {f:night,label:'🌙 Nighttime / Cool Weather Pick',key:'night'}
+  ];
+  slots.forEach((slot,i)=>{
+    if(slot.f){
+      html+=`<div class="slot-block">${cardHTML(slot.f,slot.label,i)}<button class="btn-ghost change-slot" data-slot="${slot.key}">↻ Change this one</button></div>`;
+    }else{
+      html+=`<div class="slot-block"><div style="color:var(--dim);font-style:italic;padding:20px;">No strong ${slot.label} match found.</div></div>`;
+    }
+  });
+  html+='</div>';
+  html+='<div class="restart-row" style="margin-top:8px;"><button class="btn" id="refreshDuoBtn">🔄 Refresh both</button></div>';
+  list.innerHTML=html;
+  bindCardToggles(list);
+  if(!loggedThisSession){ logResult([day&&day.name,night&&night.name].filter(Boolean),'duo'); loggedThisSession=true; }
+  document.getElementById('refreshDuoBtn').addEventListener('click',()=>{
+    duoState.daySkip++;duoState.nightSkip++;
+    renderDuoResults();
+  });
+  list.querySelectorAll('.change-slot').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const slot=btn.dataset.slot;
+      if(slot==='day')duoState.daySkip++;
+      else duoState.nightSkip++;
+      renderDuoResults();
+    });
+  });
+}
+
+let trioState={daySkip:0,nightSkip:0,specialSkip:0};
+
+function renderTrioResults(){
+  const dayRanked=rankForContext({time:'day',weather:'hot'});
+  const nightRanked=rankForContext({time:'night',weather:'cold'});
+  const specialRanked=rankForContext({special:true});
+
+  const day=pickFromRanked(dayRanked,[],trioState.daySkip);
+  const night=pickFromRanked(nightRanked,day?[day.name]:[],trioState.nightSkip);
+  const usedSoFar=[day&&day.name,night&&night.name].filter(Boolean);
+  const special=pickFromRanked(specialRanked,usedSoFar,trioState.specialSkip);
+
+  const list=document.getElementById('matchList');
+  let html='<div class="match-grid">';
+  const slots=[
+    {f:day,label:'☀️ Day / Hot Weather',key:'day'},
+    {f:night,label:'🌙 Night / Cool Weather',key:'night'},
+    {f:special,label:'🎉 Special Occasion',key:'special'}
+  ];
+  slots.forEach((slot,i)=>{
+    if(slot.f){
+      html+=`<div class="slot-block">${cardHTML(slot.f,slot.label,i)}<button class="btn-ghost change-slot" data-slot="${slot.key}">↻ Change this one</button></div>`;
+    }else{
+      html+=`<div class="slot-block"><div style="color:var(--dim);font-style:italic;padding:20px;">No strong ${slot.label} match found.</div></div>`;
+    }
+  });
+  html+='</div>';
+  html+='<div class="restart-row" style="margin-top:8px;"><button class="btn" id="refreshTrioBtn">🔄 Refresh all three</button></div>';
+  list.innerHTML=html;
+  bindCardToggles(list);
+  if(!loggedThisSession){ logResult([day&&day.name,night&&night.name,special&&special.name].filter(Boolean),'trio'); loggedThisSession=true; }
+  document.getElementById('refreshTrioBtn').addEventListener('click',()=>{
+    trioState.daySkip++;trioState.nightSkip++;trioState.specialSkip++;
+    renderTrioResults();
+  });
+  list.querySelectorAll('.change-slot').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const slot=btn.dataset.slot;
+      if(slot==='day')trioState.daySkip++;
+      else if(slot==='night')trioState.nightSkip++;
+      else trioState.specialSkip++;
+      renderTrioResults();
+    });
+  });
+}
+
+document.getElementById('restartBtn').addEventListener('click',()=>{
+  current=0;
+  loggedThisSession=false;
+  Object.assign(state,{bundle:null,age:null,occ:[],time:null,strength:null,profile:[],effect:[],freetext:"",aiTags:{profile:[],effect:[]}});
+  resultsSection.classList.remove('active');
+  heroSection.style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+</script>
+</body>
+</html>
