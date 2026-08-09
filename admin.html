@@ -90,6 +90,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
   <div class="tabs">
     <div class="tab active" data-tab="catalog">Catalog</div>
     <div class="tab" data-tab="rankings">Rankings</div>
+    <div class="tab" data-tab="activity">Activity</div>
   </div>
 
   <div class="tabpanel active" id="tab-catalog">
@@ -111,6 +112,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
           <select id="f_special"><option value="false">No</option><option value="true">Yes</option></select>
         </div>
         <div class="field"><label>Inspired by</label><input id="f_inspired" placeholder="e.g. Azzaro The Most Wanted"></div>
+      <div class="field"><label>Image URL <span style="text-transform:none;color:var(--dimmer);">(optional)</span></label><input id="f_image" placeholder="https://... — a photo of the bottle, shown at the end of the quiz"></div>
+      <p class="hint" style="margin-top:-10px;">Host the image anywhere free (drag it into your GitHub repo and use its raw link, or a free host like imgur) and paste the link here. Leave blank and the quiz just won't show a photo for this one.</p>
       </div>
 
       <div class="field"><label>Scent profile tags</label>
@@ -191,6 +194,53 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);">
         <p class="hint" style="margin-bottom:10px;">Resetting permanently deletes all logged results (for every period). Use this if you want to start counting from zero — e.g. at the start of a new season or promo. This can't be undone.</p>
         <button class="btn danger" id="resetRankingsBtn">Reset all rankings</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabpanel" id="tab-activity">
+    <div class="card">
+      <p class="hint">Tracks when people open the quiz vs. actually finish it, and which bundle they pick — separate from the fragrance rankings, so resetting one doesn't touch the other.</p>
+
+      <div class="row2" style="align-items:end;margin-bottom:18px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Period</label>
+          <select id="actPeriod">
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="month">This calendar month</option>
+            <option value="custom">Custom range…</option>
+          </select>
+        </div>
+        <div class="field" id="actCustomRangeWrap" style="display:none;margin-bottom:0;">
+          <label>From / To</label>
+          <div style="display:flex;gap:8px;">
+            <input type="date" id="actFrom">
+            <input type="date" id="actTo">
+          </div>
+        </div>
+      </div>
+
+      <div class="row3" style="margin-bottom:28px;">
+        <div class="card" style="margin-bottom:0;text-align:center;padding:18px;">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Started</div>
+          <div id="statStarted" style="font-family:'Playfair Display',serif;font-size:30px;">0</div>
+        </div>
+        <div class="card" style="margin-bottom:0;text-align:center;padding:18px;">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Completed</div>
+          <div id="statCompleted" style="font-family:'Playfair Display',serif;font-size:30px;">0</div>
+        </div>
+        <div class="card" style="margin-bottom:0;text-align:center;padding:18px;">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Completion rate</div>
+          <div id="statRate" style="font-family:'Playfair Display',serif;font-size:30px;">—</div>
+        </div>
+      </div>
+
+      <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;">Bundle choice (of completed quizzes)</h2>
+      <div style="display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
+        <div id="bundlePie" style="width:180px;height:180px;border-radius:50%;flex-shrink:0;background:var(--line);"></div>
+        <div id="bundleLegend" style="flex:1;min-width:220px;"></div>
       </div>
     </div>
   </div>
@@ -278,6 +328,7 @@ document.querySelectorAll('.tab').forEach(t=>{
     t.classList.add('active');
     $('tab-'+t.dataset.tab).classList.add('active');
     if(t.dataset.tab==='rankings')loadRankings();
+    if(t.dataset.tab==='activity')loadActivity();
   });
 });
 
@@ -370,7 +421,7 @@ function resetForm(){
   $('formTitle').textContent='Add a fragrance';
   $('cancelEditBtn').style.display='none';
   $('f_name').value=''; $('f_age').value='youthful'; $('f_special').value='false';
-  $('f_inspired').value=''; $('f_why').value=''; $('f_notes').value='';
+  $('f_inspired').value=''; $('f_image').value=''; $('f_why').value=''; $('f_notes').value='';
   picked={profile:new Set(),effect:new Set(),occ:new Set(),time:new Set(),weather:new Set(),strength:new Set()};
   renderChipPickers();
 }
@@ -385,6 +436,7 @@ $('saveBtn').addEventListener('click',async()=>{
     age:$('f_age').value,
     special:$('f_special').value==='true',
     inspired:$('f_inspired').value.trim(),
+    imageUrl:$('f_image').value.trim(),
     why:$('f_why').value.trim(),
     notes:$('f_notes').value,
     profile:[...picked.profile],
@@ -417,6 +469,7 @@ function editFrag(f){
   $('f_age').value=f.age||'youthful';
   $('f_special').value=f.special?'true':'false';
   $('f_inspired').value=f.inspired||'';
+  $('f_image').value=f.imageUrl||'';
   $('f_why').value=f.why||'';
   $('f_notes').value=f.notes||'';
   picked={
@@ -471,8 +524,8 @@ async function fetchResultsIfNeeded(){
   });
 }
 
-function filterByPeriod(list){
-  const period=$('rankPeriod').value;
+function filterByPeriodIds(list,periodId,fromId,toId){
+  const period=$(periodId).value;
   if(period==='all')return list;
   let from=null, to=null;
   const now=new Date();
@@ -480,7 +533,7 @@ function filterByPeriod(list){
   else if(period==='30'){ from=new Date(now-30*24*60*60*1000); }
   else if(period==='month'){ from=new Date(now.getFullYear(),now.getMonth(),1); }
   else if(period==='custom'){
-    const f=$('rankFrom').value, t=$('rankTo').value;
+    const f=$(fromId).value, t=$(toId).value;
     if(f)from=new Date(f+'T00:00:00');
     if(t){ to=new Date(t+'T23:59:59'); }
   }
@@ -491,6 +544,7 @@ function filterByPeriod(list){
     return true;
   });
 }
+function filterByPeriod(list){ return filterByPeriodIds(list,'rankPeriod','rankFrom','rankTo'); }
 
 $('rankPeriod').addEventListener('change',()=>{
   $('customRangeWrap').style.display = $('rankPeriod').value==='custom' ? 'block' : 'none';
@@ -540,6 +594,71 @@ $('resetRankingsBtn').addEventListener('click',async()=>{
   $('resetRankingsBtn').disabled=false;
   $('resetRankingsBtn').textContent='Reset all rankings';
 });
+
+// ---------- Activity (starts / completions / bundle pie chart) ----------
+let allStarts=null; // cached: [{id, ts}, ...]
+const BUNDLE_LABELS={single:'Single',duo:'Dynamic Duo',trio:'Mancave Trio'};
+const BUNDLE_COLORS={single:'#5a86ab',duo:'#c9a25a',trio:'#8fa66b'};
+
+async function fetchStartsIfNeeded(){
+  if(allStarts)return;
+  const snap=await getDocs(collection(db,'quiz_starts'));
+  allStarts=snap.docs.map(d=>{
+    const data=d.data();
+    return {id:d.id,ts:data.ts&&data.ts.toDate?data.ts.toDate():null};
+  });
+}
+
+$('actPeriod').addEventListener('change',()=>{
+  $('actCustomRangeWrap').style.display = $('actPeriod').value==='custom' ? 'block' : 'none';
+  renderActivity();
+});
+$('actFrom').addEventListener('change',renderActivity);
+$('actTo').addEventListener('change',renderActivity);
+
+async function loadActivity(){
+  await Promise.all([fetchResultsIfNeeded(),fetchStartsIfNeeded()]);
+  renderActivity();
+}
+
+function renderActivity(){
+  const starts=filterByPeriodIds(allStarts||[],'actPeriod','actFrom','actTo');
+  const completed=filterByPeriodIds(allResults||[],'actPeriod','actFrom','actTo');
+
+  $('statStarted').textContent=starts.length;
+  $('statCompleted').textContent=completed.length;
+  $('statRate').textContent = starts.length ? Math.round(completed.length/starts.length*100)+'%' : '—';
+
+  const counts={single:0,duo:0,trio:0};
+  completed.forEach(r=>{ if(counts[r.bundle]!==undefined)counts[r.bundle]++; else counts[r.bundle]=(counts[r.bundle]||0)+1; });
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+
+  const pie=$('bundlePie');
+  const legend=$('bundleLegend');
+  if(!total){
+    pie.style.background='var(--line)';
+    legend.innerHTML='<p style="color:var(--dim);">No completed quizzes in this period yet.</p>';
+    return;
+  }
+  let acc=0;
+  const stops=[];
+  Object.entries(counts).forEach(([k,v])=>{
+    if(!v)return;
+    const startPct=acc/total*100;
+    acc+=v;
+    const endPct=acc/total*100;
+    const color=BUNDLE_COLORS[k]||'#888';
+    stops.push(`${color} ${startPct.toFixed(2)}% ${endPct.toFixed(2)}%`);
+  });
+  pie.style.background=`conic-gradient(${stops.join(',')})`;
+
+  legend.innerHTML=Object.entries(counts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:12px;height:12px;border-radius:3px;background:${BUNDLE_COLORS[k]||'#888'};flex-shrink:0;"></div>
+      <div style="flex:1;">${BUNDLE_LABELS[k]||k}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--dim);">${v} · ${(v/total*100).toFixed(0)}%</div>
+    </div>`).join('');
+}
 </script>
 </body>
 </html>
