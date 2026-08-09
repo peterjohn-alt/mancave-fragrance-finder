@@ -164,8 +164,34 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
   <div class="tabpanel" id="tab-rankings">
     <div class="card">
       <p class="hint">Every time the quiz shows someone their results, the fragrances shown get logged here — anonymously, no personal data. This tells you what people are actually matching with most.</p>
+
+      <div class="row2" style="align-items:end;margin-bottom:18px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Period</label>
+          <select id="rankPeriod">
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="month">This calendar month</option>
+            <option value="custom">Custom range…</option>
+          </select>
+        </div>
+        <div class="field" id="customRangeWrap" style="display:none;margin-bottom:0;">
+          <label>From / To</label>
+          <div style="display:flex;gap:8px;">
+            <input type="date" id="rankFrom">
+            <input type="date" id="rankTo">
+          </div>
+        </div>
+      </div>
+
       <div id="rankStats" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--dim);margin-bottom:18px;"></div>
       <div id="rankList"></div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);">
+        <p class="hint" style="margin-bottom:10px;">Resetting permanently deletes all logged results (for every period). Use this if you want to start counting from zero — e.g. at the start of a new season or promo. This can't be undone.</p>
+        <button class="btn danger" id="resetRankingsBtn">Reset all rankings</button>
+      </div>
     </div>
   </div>
 </div>
@@ -434,20 +460,59 @@ function renderFragList(){
 }
 
 // ---------- Rankings ----------
+let allResults=null; // cached raw docs: [{id, names, ts (Date|null)}, ...]
+
+async function fetchResultsIfNeeded(){
+  if(allResults)return;
+  const snap=await getDocs(collection(db,'results'));
+  allResults=snap.docs.map(d=>{
+    const data=d.data();
+    return {id:d.id,names:data.names||[],ts:data.ts&&data.ts.toDate?data.ts.toDate():null};
+  });
+}
+
+function filterByPeriod(list){
+  const period=$('rankPeriod').value;
+  if(period==='all')return list;
+  let from=null, to=null;
+  const now=new Date();
+  if(period==='7'){ from=new Date(now-7*24*60*60*1000); }
+  else if(period==='30'){ from=new Date(now-30*24*60*60*1000); }
+  else if(period==='month'){ from=new Date(now.getFullYear(),now.getMonth(),1); }
+  else if(period==='custom'){
+    const f=$('rankFrom').value, t=$('rankTo').value;
+    if(f)from=new Date(f+'T00:00:00');
+    if(t){ to=new Date(t+'T23:59:59'); }
+  }
+  return list.filter(r=>{
+    if(!r.ts)return false; // entries without a timestamp can't be placed in a period
+    if(from && r.ts<from)return false;
+    if(to && r.ts>to)return false;
+    return true;
+  });
+}
+
+$('rankPeriod').addEventListener('change',()=>{
+  $('customRangeWrap').style.display = $('rankPeriod').value==='custom' ? 'block' : 'none';
+  renderRankings();
+});
+$('rankFrom').addEventListener('change',renderRankings);
+$('rankTo').addEventListener('change',renderRankings);
+
 async function loadRankings(){
   $('rankList').innerHTML='<div style="color:var(--dim);">Loading…</div>';
-  const snap=await getDocs(collection(db,'results'));
+  await fetchResultsIfNeeded();
+  renderRankings();
+}
+
+function renderRankings(){
+  const filtered=filterByPeriod(allResults||[]);
   const counts={};
-  let total=0;
-  snap.forEach(d=>{
-    const data=d.data();
-    total++;
-    (data.names||[]).forEach(n=>{ counts[n]=(counts[n]||0)+1; });
-  });
+  filtered.forEach(r=>{ r.names.forEach(n=>{ counts[n]=(counts[n]||0)+1; }); });
   const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  $('rankStats').textContent=`${total} completed quiz result${total===1?'':'s'} logged`;
+  $('rankStats').textContent=`${filtered.length} completed quiz result${filtered.length===1?'':'s'} in this period`;
   if(!ranked.length){
-    $('rankList').innerHTML='<p style="color:var(--dim);">No results logged yet — once people take the quiz, matches will show up here.</p>';
+    $('rankList').innerHTML='<p style="color:var(--dim);">No results logged in this period.</p>';
     return;
   }
   const max=ranked[0][1];
@@ -459,6 +524,22 @@ async function loadRankings(){
       <div class="rank-count">${count} time${count===1?'':'s'}</div>
     </div>`).join('');
 }
+
+$('resetRankingsBtn').addEventListener('click',async()=>{
+  await fetchResultsIfNeeded();
+  if(!allResults.length){ alert('There\'s nothing logged yet.'); return; }
+  const first=confirm(`This will permanently delete all ${allResults.length} logged results, for every period. This can't be undone. Continue?`);
+  if(!first)return;
+  const second=confirm('Are you absolutely sure? Type OK to permanently reset all rankings.');
+  if(!second)return;
+  $('resetRankingsBtn').disabled=true;
+  $('resetRankingsBtn').textContent='Resetting…';
+  for(const r of allResults){ await deleteDoc(doc(db,'results',r.id)); }
+  allResults=[];
+  renderRankings();
+  $('resetRankingsBtn').disabled=false;
+  $('resetRankingsBtn').textContent='Reset all rankings';
+});
 </script>
 </body>
 </html>
