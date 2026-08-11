@@ -50,6 +50,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text);}
 .add-tag-row{display:flex;gap:8px;}
 .add-tag-row input{flex:1;}
+.add-tag-row .emoji-input{flex:0 0 54px;text-align:center;font-size:16px;padding:10px 6px;}
 .add-tag-row button{white-space:nowrap;}
 .rank-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);}
 .rank-num{font-family:'Space Mono',monospace;color:var(--accent2);width:28px;flex-shrink:0;}
@@ -63,6 +64,11 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
 .logout{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);background:none;border:none;cursor:pointer;text-decoration:underline;}
 .hint{font-size:12px;color:var(--dimmer);margin-top:-8px;margin-bottom:16px;line-height:1.5;}
+.tag-edit-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+.tag-edit-row .emoji-input{width:48px;text-align:center;font-size:16px;padding:8px 4px;flex-shrink:0;}
+.tag-edit-row .label-input{flex:1;}
+.tag-edit-row .tagkey{font-family:'Space Mono',monospace;font-size:10px;color:var(--dimmer);width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tag-edit-row button{flex-shrink:0;}
 .drop-zone{border:2px dashed var(--line-s);border-radius:12px;padding:26px;text-align:center;cursor:pointer;color:var(--dim);transition:all .15s;background:var(--bg2);}
 .drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-soft);color:var(--text);}
 .drop-zone img{max-width:100%;max-height:180px;border-radius:8px;display:block;margin:0 auto;}
@@ -94,6 +100,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
     <div class="tab active" data-tab="catalog">Catalog</div>
     <div class="tab" data-tab="rankings">Rankings</div>
     <div class="tab" data-tab="activity">Activity</div>
+    <div class="tab" data-tab="tags">Tags</div>
   </div>
 
   <div class="tabpanel active" id="tab-catalog">
@@ -135,15 +142,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 
       <div class="field"><label>Scent profile tags</label>
         <div class="chip-picker" id="profileChips"></div>
-        <div class="add-tag-row"><input id="newProfileTag" placeholder="Add a new profile tag (e.g. leathery)"><button class="btn" id="addProfileTagBtn">+ Add tag</button></div>
+        <div class="add-tag-row"><input id="newProfileEmoji" class="emoji-input" placeholder="🏷️" maxlength="4"><input id="newProfileTag" placeholder="Add a new profile tag (e.g. leathery)"><button class="btn" id="addProfileTagBtn">+ Add tag</button></div>
       </div>
       <div class="field"><label>Effect tags</label>
         <div class="chip-picker" id="effectChips"></div>
-        <div class="add-tag-row"><input id="newEffectTag" placeholder="Add a new effect tag (e.g. mysterious)"><button class="btn" id="addEffectTagBtn">+ Add tag</button></div>
+        <div class="add-tag-row"><input id="newEffectEmoji" class="emoji-input" placeholder="🏷️" maxlength="4"><input id="newEffectTag" placeholder="Add a new effect tag (e.g. mysterious)"><button class="btn" id="addEffectTagBtn">+ Add tag</button></div>
       </div>
       <div class="field"><label>Occasions</label>
         <div class="chip-picker" id="occChips"></div>
-        <div class="add-tag-row"><input id="newOccTag" placeholder="Add a new occasion (e.g. graduation)"><button class="btn" id="addOccTagBtn">+ Add</button></div>
+        <div class="add-tag-row"><input id="newOccEmoji" class="emoji-input" placeholder="🏷️" maxlength="4"><input id="newOccTag" placeholder="Add a new occasion (e.g. graduation)"><button class="btn" id="addOccTagBtn">+ Add</button></div>
       </div>
       <div class="row3">
         <div class="field"><label>Time of day</label>
@@ -255,10 +262,19 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
       </div>
 
       <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;">Bundle choice (of completed quizzes)</h2>
-      <div style="display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
-        <div id="bundlePie" style="width:180px;height:180px;border-radius:50%;flex-shrink:0;background:var(--line);"></div>
-        <div id="bundleLegend" style="flex:1;min-width:220px;"></div>
-      </div>
+      <div id="bundleBars"></div>
+    </div>
+  </div>
+
+  <div class="tabpanel" id="tab-tags">
+    <div class="card">
+      <p class="hint">Edit the emoji or label shown for any choice in the quiz. Changes apply everywhere that tag is used — no need to touch individual fragrances.</p>
+      <h2 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px;">Scent Profile</h2>
+      <div id="tagEditor-profile"></div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:16px;margin:24px 0 10px;">Effect</h2>
+      <div id="tagEditor-effect"></div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:16px;margin:24px 0 10px;">Occasions</h2>
+      <div id="tagEditor-occ"></div>
     </div>
   </div>
 </div>
@@ -266,7 +282,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAOuVpsJlJuWJyfpOB_NB1Vo0ZDvb7mP44",
@@ -302,14 +318,55 @@ const SEED = [
   {name:"Lataffa - Hayaati black",age:"youthful",profile:["fruity","vanilla","amber"],effect:["youthful","masculine"],occ:["errands"],time:["day","evening"],weather:["mild"],strength:["moderate"],why:"Its fruity, sweet and musky profile is easygoing for everyday errands when you want to smell pleasant without dressing up the occasion.",inspired:"Invictus - Rabanne",notes:"Top Notes: Apple, Bergamot\n\nHeart Notes: Cinnamon, Woody Notes\n\nBase Notes: Musk, Vanilla"}
 ];
 
-const BASE_PROFILE_TAGS=["woody","citrus","aquatic","spicy","aromatic","fruity","vanilla","amber","floral","green","musky","smoky"];
-const BASE_EFFECT_TAGS=["youthful","powerful","seductive","elegant","masculine"];
-const BASE_OCC_TAGS={office:"Office / work",school:"School / university",casual:"Casual days / cafés",gym:"Running / gym / sports",outdoor:"Outdoor walks / parks",errands:"Errand runs",dinners:"Dinners",date:"Date nights",clubs:"Clubs / bars",weddings:"Weddings / parties",formal:"Formal dinners / galas"};
+const BASE_PROFILE_META={
+  woody:{emoji:"🌲",label:"Woody"},citrus:{emoji:"🍋",label:"Citrusy"},aquatic:{emoji:"🌊",label:"Aquatic"},
+  spicy:{emoji:"🌶️",label:"Spicy"},aromatic:{emoji:"🌿",label:"Aromatic"},fruity:{emoji:"🍍",label:"Fruity"},
+  vanilla:{emoji:"🍦",label:"Vanilla"},amber:{emoji:"🪵",label:"Amber"},floral:{emoji:"🌸",label:"Floral"},
+  green:{emoji:"🍃",label:"Green"},musky:{emoji:"🦌",label:"Musky"},smoky:{emoji:"🔥",label:"Smoky"}
+};
+const BASE_EFFECT_META={
+  youthful:{emoji:"⚡",label:"Youthful"},powerful:{emoji:"💪",label:"Powerful"},seductive:{emoji:"😏",label:"Seductive"},
+  elegant:{emoji:"✨",label:"Elegant"},masculine:{emoji:"🕴️",label:"Masculine"}
+};
+const BASE_OCC_META={
+  office:{emoji:"🏢",label:"Office / work"},school:{emoji:"🎓",label:"School / university"},casual:{emoji:"☕",label:"Casual days / cafés"},
+  gym:{emoji:"🏃",label:"Running / gym / sports"},outdoor:{emoji:"🌳",label:"Outdoor walks / parks"},errands:{emoji:"🛒",label:"Errand runs"},
+  dinners:{emoji:"🍽️",label:"Dinners"},date:{emoji:"❤️",label:"Date nights"},clubs:{emoji:"🍸",label:"Clubs / bars"},
+  weddings:{emoji:"💍",label:"Weddings / parties"},formal:{emoji:"🕴️",label:"Formal dinners / galas"}
+};
+const BASE_META={profile:BASE_PROFILE_META,effect:BASE_EFFECT_META,occ:BASE_OCC_META};
+// Firestore overrides — whatever's saved here (custom emoji/label, or brand-new tags) wins over BASE_META.
+let tagMeta={profile:{},effect:{},occ:{}};
+
+function tagInfo(category,tag){
+  const override=tagMeta[category][tag];
+  const base=BASE_META[category][tag];
+  return {
+    emoji:(override&&override.emoji)||(base&&base.emoji)||'🏷️',
+    label:(override&&override.label)||(base&&base.label)||tag.charAt(0).toUpperCase()+tag.slice(1)
+  };
+}
+function allTagsForCategory(category,catFieldName){
+  const s=new Set([...Object.keys(BASE_META[category]),...Object.keys(tagMeta[category])]);
+  catalog.forEach(f=>{ (f[catFieldName||category]||[]).forEach(t=>s.add(t)); });
+  return s;
+}
+async function saveTagMeta(category,tag,emoji,label){
+  tagMeta[category][tag]={emoji,label};
+  await setDoc(doc(db,'tagMeta',category),{[tag]:{emoji,label}},{merge:true});
+}
+async function loadTagMeta(){
+  const [pSnap,eSnap,oSnap]=await Promise.all([
+    getDoc(doc(db,'tagMeta','profile')),
+    getDoc(doc(db,'tagMeta','effect')),
+    getDoc(doc(db,'tagMeta','occ'))
+  ]);
+  tagMeta.profile=pSnap.exists()?pSnap.data():{};
+  tagMeta.effect=eSnap.exists()?eSnap.data():{};
+  tagMeta.occ=oSnap.exists()?oSnap.data():{};
+}
 
 let catalog=[];
-let profileTags=new Set(BASE_PROFILE_TAGS);
-let effectTags=new Set(BASE_EFFECT_TAGS);
-let occTags={...BASE_OCC_TAGS};
 let editingId=null;
 let picked={profile:new Set(),effect:new Set(),occ:new Set(),time:new Set(),weather:new Set(),strength:new Set()};
 
@@ -346,11 +403,13 @@ document.querySelectorAll('.tab').forEach(t=>{
     $('tab-'+t.dataset.tab).classList.add('active');
     if(t.dataset.tab==='rankings')loadRankings();
     if(t.dataset.tab==='activity')loadActivity();
+    if(t.dataset.tab==='tags')renderTagEditor();
   });
 });
 
 // ---------- App init ----------
 async function initApp(){
+  await loadTagMeta();
   await loadCatalog();
   renderChipPickers();
   renderFragList();
@@ -359,11 +418,6 @@ async function initApp(){
 async function loadCatalog(){
   const snap=await getDocs(collection(db,'fragrances'));
   catalog=snap.docs.map(d=>({id:d.id,...d.data()}));
-  catalog.forEach(f=>{
-    (f.profile||[]).forEach(t=>profileTags.add(t));
-    (f.effect||[]).forEach(t=>effectTags.add(t));
-    (f.occ||[]).forEach(t=>{if(!occTags[t])occTags[t]=t;});
-  });
   $('seedCard').style.display=catalog.length===0?'block':'none';
   $('fragCount').textContent=catalog.length;
 }
@@ -378,9 +432,10 @@ $('seedBtn').addEventListener('click',async()=>{
 });
 
 // ---------- Chip pickers ----------
-function chipEl(container,value,label,groupKey){
+function chipEl(container,value,groupKey){
+  const info=tagInfo(groupKey,value);
   const b=document.createElement('button');
-  b.type='button'; b.className='chip'; b.textContent=label; b.dataset.v=value;
+  b.type='button'; b.className='chip'; b.textContent=`${info.emoji} ${info.label}`; b.dataset.v=value;
   if(picked[groupKey].has(value))b.classList.add('on');
   b.addEventListener('click',()=>{
     if(picked[groupKey].has(value)){picked[groupKey].delete(value);b.classList.remove('on');}
@@ -391,11 +446,11 @@ function chipEl(container,value,label,groupKey){
 
 function renderChipPickers(){
   const pc=$('profileChips'); pc.innerHTML='';
-  [...profileTags].sort().forEach(t=>chipEl(pc,t,t,'profile'));
+  [...allTagsForCategory('profile')].sort().forEach(t=>chipEl(pc,t,'profile'));
   const ec=$('effectChips'); ec.innerHTML='';
-  [...effectTags].sort().forEach(t=>chipEl(ec,t,t,'effect'));
+  [...allTagsForCategory('effect')].sort().forEach(t=>chipEl(ec,t,'effect'));
   const oc=$('occChips'); oc.innerHTML='';
-  Object.entries(occTags).forEach(([v,l])=>chipEl(oc,v,l,'occ'));
+  [...allTagsForCategory('occ')].sort().forEach(t=>chipEl(oc,t,'occ'));
 
   // time/weather/strength chips are static — just wire click handlers (rebuilt each render)
   ['timeChips','weatherChips','strengthChips'].forEach((id,i)=>{
@@ -411,25 +466,22 @@ function renderChipPickers(){
   });
 }
 
-$('addProfileTagBtn').addEventListener('click',()=>{
-  const v=$('newProfileTag').value.trim().toLowerCase();
-  if(!v)return;
-  profileTags.add(v); picked.profile.add(v); $('newProfileTag').value='';
+async function addNewTag(category,tagInputId,emojiInputId){
+  const raw=$(tagInputId).value.trim();
+  if(!raw)return;
+  const emoji=$(emojiInputId).value.trim()||'🏷️';
+  const tag = category==='occ'
+    ? raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
+    : raw.toLowerCase();
+  const label = category==='occ' ? raw : raw.charAt(0).toUpperCase()+raw.slice(1);
+  await saveTagMeta(category,tag,emoji,label);
+  picked[category].add(tag);
+  $(tagInputId).value=''; $(emojiInputId).value='';
   renderChipPickers();
-});
-$('addEffectTagBtn').addEventListener('click',()=>{
-  const v=$('newEffectTag').value.trim().toLowerCase();
-  if(!v)return;
-  effectTags.add(v); picked.effect.add(v); $('newEffectTag').value='';
-  renderChipPickers();
-});
-$('addOccTagBtn').addEventListener('click',()=>{
-  const label=$('newOccTag').value.trim();
-  if(!label)return;
-  const v=label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  occTags[v]=label; picked.occ.add(v); $('newOccTag').value='';
-  renderChipPickers();
-});
+}
+$('addProfileTagBtn').addEventListener('click',()=>addNewTag('profile','newProfileTag','newProfileEmoji'));
+$('addEffectTagBtn').addEventListener('click',()=>addNewTag('effect','newEffectTag','newEffectEmoji'));
+$('addOccTagBtn').addEventListener('click',()=>addNewTag('occ','newOccTag','newOccEmoji'));
 
 // ---------- Save / Edit / Delete ----------
 // ---------- Photo drag-and-drop (resized + compressed in-browser, stored as data URI — no third-party host needed) ----------
@@ -717,31 +769,50 @@ function renderActivity(){
   completed.forEach(r=>{ if(counts[r.bundle]!==undefined)counts[r.bundle]++; else counts[r.bundle]=(counts[r.bundle]||0)+1; });
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
 
-  const pie=$('bundlePie');
-  const legend=$('bundleLegend');
+  const bars=$('bundleBars');
   if(!total){
-    pie.style.background='var(--line)';
-    legend.innerHTML='<p style="color:var(--dim);">No completed quizzes in this period yet.</p>';
+    bars.innerHTML='<p style="color:var(--dim);">No completed quizzes in this period yet.</p>';
     return;
   }
-  let acc=0;
-  const stops=[];
-  Object.entries(counts).forEach(([k,v])=>{
-    if(!v)return;
-    const startPct=acc/total*100;
-    acc+=v;
-    const endPct=acc/total*100;
-    const color=BUNDLE_COLORS[k]||'#888';
-    stops.push(`${color} ${startPct.toFixed(2)}% ${endPct.toFixed(2)}%`);
-  });
-  pie.style.background=`conic-gradient(${stops.join(',')})`;
-
-  legend.innerHTML=Object.entries(counts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <div style="width:12px;height:12px;border-radius:3px;background:${BUNDLE_COLORS[k]||'#888'};flex-shrink:0;"></div>
-      <div style="flex:1;">${BUNDLE_LABELS[k]||k}</div>
-      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--dim);">${v} · ${(v/total*100).toFixed(0)}%</div>
+  const max=Math.max(...Object.values(counts));
+  const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  bars.innerHTML=ranked.map(([k,v])=>`
+    <div class="rank-row">
+      <div class="rank-name">${BUNDLE_LABELS[k]||k}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${max?(v/max*100).toFixed(0):0}%;background:${BUNDLE_COLORS[k]||'#888'};"></div></div>
+      <div class="rank-count">${v} · ${(v/total*100).toFixed(0)}%</div>
     </div>`).join('');
+}
+
+// ---------- Tags editor ----------
+function renderTagEditor(){
+  ['profile','effect','occ'].forEach(category=>{
+    const container=$('tagEditor-'+category);
+    const tags=[...allTagsForCategory(category)].sort();
+    container.innerHTML=tags.map(tag=>{
+      const info=tagInfo(category,tag);
+      return `
+      <div class="tag-edit-row" data-tag="${tag}">
+        <input class="emoji-input" value="${info.emoji}" maxlength="4">
+        <input class="label-input" value="${info.label}">
+        <div class="tagkey" title="${tag}">${tag}</div>
+        <button class="btn" data-act="save">Save</button>
+      </div>`;
+    }).join('');
+    container.querySelectorAll('.tag-edit-row').forEach(row=>{
+      row.querySelector('[data-act="save"]').addEventListener('click',async()=>{
+        const tag=row.dataset.tag;
+        const emoji=row.querySelector('.emoji-input').value.trim()||'🏷️';
+        const label=row.querySelector('.label-input').value.trim()||tag;
+        const btn=row.querySelector('[data-act="save"]');
+        btn.textContent='Saving…'; btn.disabled=true;
+        await saveTagMeta(category,tag,emoji,label);
+        btn.textContent='Saved ✓';
+        setTimeout(()=>{ btn.textContent='Save'; btn.disabled=false; },1200);
+        renderChipPickers(); // keep the Catalog tab's chips in sync if visited next
+      });
+    });
+  });
 }
 </script>
 </body>

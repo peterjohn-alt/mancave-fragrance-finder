@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Find Your Scent — Mancave Man Market</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -128,12 +128,6 @@ body{
 textarea.freetext{width:100%;font-family:'Inter',sans-serif;font-size:15px;padding:16px;border:1.5px solid var(--line-s);border-radius:10px;background:var(--bg2);color:var(--text);resize:vertical;min-height:110px;line-height:1.55;}
 textarea.freetext::placeholder{color:var(--dimmer);font-style:italic;}
 textarea.freetext:focus{outline:none;border-color:var(--accent);}
-.ai-btn{margin-top:12px;font-family:'Space Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;padding:10px 18px;border-radius:8px;border:1.5px solid var(--line-s);background:transparent;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
-.ai-btn:hover{background:var(--text);color:var(--bg2);border-color:var(--text);}
-.ai-btn.loading{opacity:.6;pointer-events:none;}
-.ai-banner{margin-top:14px;padding:12px 16px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;font-size:13px;font-style:italic;color:var(--accent2);line-height:1.55;display:none;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.spinner{width:12px;height:12px;border:2px solid rgba(120,90,50,.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
 
 .nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:14px;}
 .btn{font-family:'Space Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;padding:14px 26px;border-radius:10px;cursor:pointer;font-weight:700;transition:all .18s;border:1.5px solid var(--line-s);background:transparent;color:var(--text);}
@@ -179,9 +173,17 @@ textarea.freetext:focus{outline:none;border-color:var(--accent);}
 footer{text-align:center;padding:26px;border-top:1px solid var(--line);color:var(--dimmer);font-size:12px;font-family:'Space Mono',monospace;letter-spacing:.05em;}
 
 @media(max-width:600px){
+  .w{padding:0 16px;}
   .opt-grid.two-col{grid-template-columns:1fr;}
+  .opt-grid.chips{grid-template-columns:repeat(2,1fr);gap:10px;}
   .match-head{flex-direction:column;}
-  .quiz-panel{padding:26px 20px;}
+  .quiz-panel{padding:24px 18px;}
+  .match-row{flex-direction:column;gap:3px;}
+  .match-row .lab{min-width:0;}
+  .quiz{padding:44px 0 calc(64px + env(safe-area-inset-bottom,0px));}
+  .nav-row{margin-top:22px;padding-bottom:10px;}
+  .hero{padding:48px 0 32px;}
+  .hero-sub{font-size:15px;}
 }
 </style>
 </head>
@@ -236,7 +238,7 @@ footer{text-align:center;padding:26px;border-top:1px solid var(--line);color:var
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAOuVpsJlJuWJyfpOB_NB1Vo0ZDvb7mP44",
@@ -290,24 +292,63 @@ const EFFECT_META={
   elegant:{e:"✨",l:"Elegant",d:"Polished, refined, sophisticated"},
   masculine:{e:"🕴️",l:"Masculine",d:"Confident, mature, traditionally masculine"}
 };
+const OCC_META={
+  office:{e:"🏢",l:"Office / work"},school:{e:"🎓",l:"School / university"},casual:{e:"☕",l:"Casual days / cafés"},
+  gym:{e:"🏃",l:"Running / gym / sports"},outdoor:{e:"🌳",l:"Outdoor walks / parks"},errands:{e:"🛒",l:"Errand runs"},
+  dinners:{e:"🍽️",l:"Dinners"},date:{e:"❤️",l:"Date nights"},clubs:{e:"🍸",l:"Clubs / bars"},
+  weddings:{e:"💍",l:"Weddings / parties"},formal:{e:"🕴️",l:"Formal dinners / galas"}
+};
+// Overrides loaded from Firestore's "tagMeta" collection — whatever Peter sets in the
+// admin panel's Tags tab (custom emoji, custom label, brand-new tags) wins over the
+// fallback maps above.
+let TAG_OVERRIDES={profile:{},effect:{},occ:{}};
+
 function titleCase(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-function tagOpt(tag,meta){
-  const m=meta[tag];
-  return {v:tag,e:m?m.e:"🏷️",l:m?m.l:titleCase(tag),d:m?m.d:""};
+function tagOpt(tag,fallbackMeta,overrideMeta){
+  const o=overrideMeta[tag], m=fallbackMeta[tag];
+  return {
+    v:tag,
+    e:(o&&o.emoji)||(m&&m.e)||"🏷️",
+    l:(o&&o.label)||(m&&m.l)||titleCase(tag),
+    d:(m&&m.d)||""
+  };
 }
+let OCC_LABEL_MAP={};
 function buildDynamicTagOptions(){
-  const profileTags=new Set(Object.keys(PROFILE_META));
-  const effectTags=new Set(Object.keys(EFFECT_META));
+  const profileTags=new Set([...Object.keys(PROFILE_META),...Object.keys(TAG_OVERRIDES.profile)]);
+  const effectTags=new Set([...Object.keys(EFFECT_META),...Object.keys(TAG_OVERRIDES.effect)]);
+  const occTags=new Set([...Object.keys(OCC_META),...Object.keys(TAG_OVERRIDES.occ)]);
   CATALOG.forEach(f=>{
     (f.profile||[]).forEach(t=>profileTags.add(t));
     (f.effect||[]).forEach(t=>effectTags.add(t));
+    (f.occ||[]).forEach(t=>occTags.add(t));
   });
-  const profileOpts=[...profileTags].map(t=>tagOpt(t,PROFILE_META));
-  const effectOpts=[...effectTags].map(t=>tagOpt(t,EFFECT_META));
+  const profileOpts=[...profileTags].map(t=>tagOpt(t,PROFILE_META,TAG_OVERRIDES.profile));
+  const effectOpts=[...effectTags].map(t=>tagOpt(t,EFFECT_META,TAG_OVERRIDES.effect));
+  const occOpts=[...occTags].map(t=>tagOpt(t,OCC_META,TAG_OVERRIDES.occ));
   const profileStep=STEPS.find(s=>s.key==='profile');
   const effectStep=STEPS.find(s=>s.key==='effect');
+  const occStep=STEPS.find(s=>s.key==='occ');
   profileStep.opts=profileOpts;
   effectStep.opts=effectOpts;
+  occStep.opts=occOpts;
+  OCC_LABEL_MAP={};
+  occOpts.forEach(o=>{ OCC_LABEL_MAP[o.v]=o.l; });
+}
+
+async function loadTagMeta(){
+  try{
+    const [pSnap,eSnap,oSnap]=await Promise.all([
+      getDoc(doc(db,'tagMeta','profile')),
+      getDoc(doc(db,'tagMeta','effect')),
+      getDoc(doc(db,'tagMeta','occ'))
+    ]);
+    TAG_OVERRIDES.profile=pSnap.exists()?pSnap.data():{};
+    TAG_OVERRIDES.effect=eSnap.exists()?eSnap.data():{};
+    TAG_OVERRIDES.occ=oSnap.exists()?oSnap.data():{};
+  }catch(e){
+    console.error('Could not load tag customizations (using defaults)',e);
+  }
 }
 
 async function loadCatalog(){
@@ -315,7 +356,7 @@ async function loadCatalog(){
   startBtn.textContent='Loading fragrances…';
   startBtn.disabled=true;
   try{
-    const snap=await getDocs(collection(db,'fragrances'));
+    const [snap]=await Promise.all([getDocs(collection(db,'fragrances')),loadTagMeta()]);
     CATALOG=snap.docs.map(d=>({id:d.id,...d.data()}));
   }catch(e){
     console.error('Failed to load fragrance catalog',e);
@@ -341,7 +382,6 @@ async function logStart(){
   }
 }
 
-const OCC_LABELS={office:"Office / work",school:"School / university",casual:"Casual days / cafés",gym:"Running / gym / sports",outdoor:"Outdoor walks / parks",errands:"Errand runs",dinners:"Dinners",date:"Date nights",clubs:"Clubs / bars",weddings:"Weddings / parties",formal:"Formal dinners / galas"};
 const STRENGTH_LABELS={subtle:"🤏 Subtle",moderate:"👀 Moderate",strong:"🔥 Strong"};
 const WEATHER_LABELS={hot:"hot weather",mild:"warm weather",cold:"cool weather"};
 const TIME_LABELS={day:"daytime",evening:"evening",night:"night"};
@@ -355,9 +395,7 @@ const STEPS=[
   {key:"age",sig:"Your era.",title:"Age Range",help:"This is only a light factor in the final recommendation — the fragrance's character, the occasion and your preferences carry more weight.",type:"single",cols:"stack",opts:[
     {v:"1825",e:"",l:"18–25 (Youthful)"},{v:"2535",e:"",l:"25–35 (Versatile/Mid-range)"},{v:"35plus",e:"",l:"35+ (Mature)"}
   ]},
-  {key:"occ",sig:"Your world.",title:"Where / When to Wear",help:"Choose where you see yourself wearing the fragrance. Select as many as apply.",type:"multi",cols:"",opts:[
-    {v:"office",e:"🏢",l:"Office / work"},{v:"school",e:"🎓",l:"School / university"},{v:"casual",e:"☕",l:"Casual days / cafés"},{v:"gym",e:"🏃",l:"Running / gym / sports"},{v:"outdoor",e:"🌳",l:"Outdoor walks / parks"},{v:"errands",e:"🛒",l:"Errand runs"},{v:"dinners",e:"🍽️",l:"Dinners"},{v:"date",e:"❤️",l:"Date nights"},{v:"clubs",e:"🍸",l:"Clubs / bars"},{v:"weddings",e:"💍",l:"Weddings / parties"},{v:"formal",e:"🕴️",l:"Formal dinners / galas"}
-  ]},
+  {key:"occ",sig:"Your world.",title:"Where / When to Wear",help:"Choose where you see yourself wearing the fragrance. Select as many as apply.",type:"multi",cols:"",opts:[]},
   {key:"time",sig:"Your hour.",title:"Time of Day",help:"",type:"single",cols:"stack",showIf:(st)=>st.bundle==='single',opts:[
     {v:"day",e:"⛅",l:"Daytime",d:"Fresh, clean and easy-going"},{v:"evening",e:"🌆",l:"Evening",d:"Smoother, warmer, more noticeable"},{v:"night",e:"🌙",l:"Night",d:"Richer, sweeter, spicier, stronger"},{v:"all",e:"🔄",l:"All day",d:"Versatile across situations"}
   ]},
@@ -425,8 +463,6 @@ function renderStep(){
     if(s.max)html+=`<div class="limit-note">Up to ${s.max} — selected ${state[s.key].length}/${s.max}</div>`;
   }else if(s.type==='text'){
     html+=`<textarea class="freetext" id="freetextInput" placeholder="e.g. &quot;I'm looking for a strong, fresh fragrance that will turn heads as I walk past&quot;...">${state.freetext}</textarea>`;
-    html+=`<button class="ai-btn" id="interpretBtn"><span id="interpretIco">✦</span><span id="interpretText">Read my vibe</span></button>`;
-    html+=`<div class="ai-banner" id="aiBanner"></div>`;
   }
 
   stepArea.innerHTML=html;
@@ -463,7 +499,6 @@ function bindStepEvents(s){
   }else if(s.type==='text'){
     const ta=document.getElementById('freetextInput');
     ta.addEventListener('input',()=>{state.freetext=ta.value;});
-    document.getElementById('interpretBtn').addEventListener('click',interpretVibe);
   }
 }
 
@@ -488,44 +523,6 @@ nextBtn.addEventListener('click',()=>{
   if(ni<STEPS.length){current=ni;renderStep();window.scrollTo({top:0,behavior:'smooth'});}
   else{buildResults();}
 });
-
-async function interpretVibe(){
-  const text=document.getElementById('freetextInput').value.trim();
-  if(!text){alert('Type something first!');return;}
-  const btn=document.getElementById('interpretBtn');
-  btn.classList.add('loading');
-  document.getElementById('interpretIco').innerHTML='<span class="spinner"></span>';
-  document.getElementById('interpretText').textContent='Reading your vibe...';
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:500,
-        system:`You are a fragrance expert. Parse a description into structured attributes. Return ONLY valid JSON, no markdown.
-Schema: {"profile":[],"effect":[],"summary":""}
-profile: subset of [woody,citrus,aquatic,spicy,aromatic,fruity,vanilla,amber] max 3
-effect: subset of [youthful,powerful,seductive,elegant,masculine] max 2
-summary: one punchy sentence <=12 words`,
-        messages:[{role:'user',content:text}]
-      })
-    });
-    const data=await res.json();
-    const raw=data.content.map(b=>b.text||'').join('').trim().replace(/```json|```/g,'');
-    const p=JSON.parse(raw);
-    state.aiTags.profile=p.profile||[];
-    state.aiTags.effect=p.effect||[];
-    const banner=document.getElementById('aiBanner');
-    banner.textContent=p.summary?`“${p.summary}”`:'Got it — blended into your matches.';
-    banner.style.display='block';
-  }catch(e){
-    const banner=document.getElementById('aiBanner');
-    banner.textContent="Couldn't read that — no problem, your other answers still count.";
-    banner.style.display='block';
-  }
-  btn.classList.remove('loading');
-  document.getElementById('interpretIco').textContent='✓';
-  document.getElementById('interpretText').textContent='Vibe captured';
-}
 
 function ageMatch(f){
   const map={'1825':'youthful','2535':'mid','35plus':'mature'};
@@ -594,7 +591,7 @@ function pickFromRanked(ranked,excludeNames,skip){
 }
 
 const OCC_TIME_WEATHER_LINE=(f)=>{
-  const occText=f.occ.map(o=>OCC_LABELS[o]).join(', ');
+  const occText=f.occ.map(o=>OCC_LABEL_MAP[o]||o).join(', ');
   const timeText=f.time.map(t=>TIME_LABELS[t]).join(', ');
   const weatherText=f.weather.map(w=>WEATHER_LABELS[w]).join(', ');
   return `${occText} — best in the ${timeText}, suited to ${weatherText}`;
